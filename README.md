@@ -31,7 +31,7 @@ source venv/bin/activate
 
 Install dependencies
 ```sh
-pip install pymysql flask
+pip install pymysql flask flask-cors
 ```
 
 Run the app.py to start the API server
