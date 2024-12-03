@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pymysql  # Use pymysql if preferred
 from db_config import db_host,db_user,db_password,db_database
 
 app = Flask(__name__)
+CORS(app)
 
 # MySQL configuration
 db_config = {
@@ -54,6 +56,25 @@ def insert_data():
         return jsonify({"message": "Data inserted successfully!"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/get_cards',methods=['GET'])
+def get_cards():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        limit = int(request.args.get('limit', 10))
+        offset = int(request.args.get('offset', 0))
+
+        cursor.execute("SELECT * FROM Recipes LIMIT %s OFFSET %s", (limit, offset))
+        cards = cursor.fetchall()
+
+        return jsonify(cards)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
