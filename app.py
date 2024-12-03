@@ -87,5 +87,39 @@ def get_cards():
         cursor.close()
         connection.close()
 
+@app.route('/get_cards_search', methods=['GET'])
+def get_cards_search():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        limit = int(request.args.get('limit', 20))
+        offset = int(request.args.get('offset', 0))
+        search_value = str(request.args.get('search_value'))
+
+        like_query = f"%{search_value}%"
+
+        load_title_search_query = """
+            SELECT Recipes.id, Recipes.title, Users.username AS userId, TimeofMeal.name AS timetoeat, Type.name AS mealType, Seasons.name AS season, Recipes.prepTime, Recipes.cookTime
+            FROM Recipes
+            JOIN Users ON Recipes.userId = Users.id
+            JOIN TimeofMeal ON Recipes.timetoeat = TimeofMeal.id
+            JOIN Type ON Recipes.mealType = Type.id
+            JOIN Seasons ON Recipes.season = Seasons.id
+            WHERE title LIKE %s OR Users.username LIKE %s
+            LIMIT %s OFFSET %s;
+        """
+
+        cursor.execute(load_title_search_query, (like_query, like_query, limit, offset))
+        result = cursor.fetchall()
+        cards = [{"id": row[0], "title":row[1], "userId":row[2], "timetoeat":row[3], "mealType":row[4], "season":row[5], "prepTime": row[6], "cookTime":row[7]} for row in result]
+
+        return jsonify(cards)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
