@@ -66,8 +66,19 @@ def get_cards():
         limit = int(request.args.get('limit', 10))
         offset = int(request.args.get('offset', 0))
 
-        cursor.execute("SELECT * FROM Recipes LIMIT %s OFFSET %s", (limit, offset))
-        cards = cursor.fetchall()
+        load_all_query = """
+            SELECT Recipes.id, Recipes.title, Users.username AS userId, TimeofMeal.name AS timetoeat, Type.name AS mealType, Seasons.name AS season, Recipes.prepTime, Recipes.cookTime
+            FROM Recipes
+            JOIN Users ON Recipes.userId = Users.id
+            JOIN TimeofMeal ON Recipes.timetoeat = TimeofMeal.id
+            JOIN Type ON Recipes.mealType = Type.id
+            JOIN Seasons ON Recipes.season = Seasons.id
+            LIMIT %s OFFSET %s;
+        """
+
+        cursor.execute(load_all_query, (limit, offset))
+        result = cursor.fetchall()
+        cards = [{"id": row[0], "title":row[1], "userId":row[2], "timetoeat":row[3], "mealType":row[4], "season":row[5], "prepTime": row[6], "cookTime":row[7]} for row in result]
 
         return jsonify(cards)
     except Exception as e:
