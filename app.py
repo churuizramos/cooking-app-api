@@ -76,11 +76,11 @@ def get_cards_search():
             JOIN TimeofMeal ON Recipes.timetoeat = TimeofMeal.id
             JOIN Type ON Recipes.mealType = Type.id
             JOIN Seasons ON Recipes.season = Seasons.id
-            WHERE title LIKE %s OR Users.username LIKE %s
+            WHERE title LIKE %s OR Users.username LIKE %s OR TimeofMeal.name LIKE %s OR Type.name LIKE %s OR Seasons.name LIKE %s
             LIMIT %s OFFSET %s;
         """
 
-        cursor.execute(load_title_search_query, (like_query, like_query, limit, offset))
+        cursor.execute(load_title_search_query, (like_query, like_query, like_query, like_query, like_query, limit, offset))
         result = cursor.fetchall()
         cards = [{"id": row[0], "title":row[1], "userId":row[2], "timetoeat":row[3], "mealType":row[4], "season":row[5], "prepTime": row[6], "cookTime":row[7]} for row in result]
 
@@ -155,7 +155,7 @@ def get_recipe(recipe_id):
         cursor = connection.cursor()
 
         query = """
-            SELECT Recipes.id, Recipes.title, Users.username AS userId, Recipes.created, TimeofMeal.name AS timetoeat, Type.name AS mealType, Seasons.name AS season, Recipes.prepTime, Recipes.cookTime, Recipes.description, Recipes.yield, Countries.name AS countryOfOrigin
+            SELECT Recipes.id, Recipes.title, Users.username AS userId, Recipes.created, TimeofMeal.name AS timetoeat, Type.name AS mealType, Seasons.name AS season, Recipes.prepTime, Recipes.cookTime, Recipes.description, Recipes.yield, Countries.name AS countryOfOrigin, Recipes.userId AS userId_id
             FROM Recipes
             JOIN Users ON Recipes.userId = Users.id
             JOIN TimeofMeal ON Recipes.timetoeat = TimeofMeal.id
@@ -171,8 +171,28 @@ def get_recipe(recipe_id):
         if not result:
             abort(404, description="Recipe not found")
 
-        recipe = [{"id": row[0], "title":row[1], "userId":row[2], "created":row[3], "timetoeat":row[4], "mealType":row[5], "season":row[6], "prepTime": row[7], "cookTime":row[8], "description":row[9], "recyield":row[10], "countryOfOrigin":row[11]} for row in result]
+        recipe = [{"id": row[0], "title":row[1], "userId":row[2], "created":row[3], "timetoeat":row[4], "mealType":row[5], "season":row[6], "prepTime": row[7], "cookTime":row[8], "description":row[9], "recyield":row[10], "countryOfOrigin":row[11], "userId_id":row[12]} for row in result]
         return jsonify(recipe)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/get_user/<int:user_id>',methods=['GET'])
+def get_user(user_id):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        query = "SELECT * FROM Users WHERE id = %s;"
+        cursor.execute(query,user_id)
+        result = cursor.fetchall()
+
+        if not result:
+            abort(404, description="User not found")
+        
+        user_data = [{"id":row[0], "username":row[1], "firstName":row[2], "lastName":row[3], "joinDate":row[4]} for row in result]
+        return jsonify(user_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
