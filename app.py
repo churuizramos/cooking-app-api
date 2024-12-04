@@ -121,5 +121,32 @@ def get_cards_search():
         cursor.close()
         connection.close()
 
+# Example accounts
+@app.route('/new_user', methods=['POST'])
+def insert_user():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        firstName = data.get('firstName')
+        lastName = data.get('lastName')
+        joinDate = data.get('joinDate')
+
+        if not all([username, firstName, lastName, joinDate]):
+            return jsonify({"error": "Missing fields"}),400
+        
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = "INSERT INTO Users (username, firstName, lastName, joinDate) VALUES (%s, %s, %s, %s);"
+        cursor.execute(query, (username, firstName, lastName, joinDate))
+        connection.commit()
+
+        cursor.close()
+        connection.close()
+
+        return jsonify({"message":"User inserted successfully!"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}),500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
