@@ -199,5 +199,59 @@ def get_user(user_id):
         cursor.close()
         connection.close()
 
+@app.route('/get_cookbooks',methods=['GET'])
+def get_cookbooks():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        limit = int(request.args.get('limit',10))
+        offset = int(request.args.get('offsert',0))
+
+        load_all_query = """
+            SELECT Cookbooks.id, Cookbooks.title, Users.username as userId, Cookbooks.description, Cookbooks.created, Countries.name as countryOfOrigin, Type.name as mealType, TimeofMeal.name as timeofMeal  
+            FROM Cookbooks
+            JOIN Users ON Cookbooks.userId = Users.id
+            JOIN Countries ON Cookbooks.countryOfOrigin = Countries.id
+            JOIN Type ON Cookbooks.mealType = Type.id
+            JOIN TimeofMeal ON Cookbooks.timeofMeal = TimeofMeal.id
+            LIMIT %s OFFSET %s;
+            """
+
+        cursor.execute(load_all_query,(limit, offset))
+        result = cursor.fetchall()
+        covers = [{"id": row[0], "title":row[1],"userId":row[2], "description": row[3], "created":row[4], "countryOfOrigin":row[5], "mealType":row[6], "timeofMeal":row[7]} for row in result]
+        return jsonify(covers)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/get_cookbook/<int:cookbook_id>',methods=['GET'])
+def get_cookbook(cookbook_id):
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = """
+            SELECT Cookbooks.id, Cookbooks.title, Users.username as userid, Cookbooks.description, Cookbooks.created, Countries.name as countryOfOrigin, Type.name as mealtype, TimeofMeal.name as timeofMeal  
+            FROM Cookbooks
+            JOIN Users ON Cookbooks.userid = Users.id
+            JOIN Countries ON Cookbooks.countryOfOrigin = Countries.id
+            JOIN Type ON Cookbooks.mealtype = Type.id
+            JOIN TimeofMeal ON Cookbooks.timeofMeal = TimeofMeal.id
+            WHERE Cookbooks.id = %s;
+            """
+        cursor.execute(query, cookbook_id)
+        result = cursor.fetchall()
+        cookbook = [{"id": row[0], "title":row[1],"userid":row[2], "description": row[3], "created":row[4], "countryOfOrigin":row[5], "mealType":row[6], "timeofMeal":row[7]} for row in result]
+        return jsonify(cookbook)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
