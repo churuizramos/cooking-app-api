@@ -16,7 +16,10 @@ db_config = {
 
 # Establish MySQL connection
 def get_db_connection():
-    return pymysql.connect(**db_config)
+    try:
+        return pymysql.connect(**db_config)
+    except pymysql.MySQLError as e:
+        printf(f"Error connecting to the database: {e}")
 
 # Route to insert data
 @app.route('/insert', methods=['POST'])
